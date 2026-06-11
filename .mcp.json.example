@@ -2,18 +2,28 @@
   "mcpServers": {
     "ftt-gmail-tracker": {
       "command": "python3",
-      "args": ["mcp-servers/gmail-server/gmail_tracker.py", "--mcp"],
+      "args": [
+        "mcp-servers/gmail-server/gmail_tracker.py",
+        "--mcp"
+      ],
       "description": "Sync + classify recruiter email (interview/offer/rejection) into the local pipeline"
     },
     "ftt-job-discovery": {
       "command": "python3",
-      "args": ["mcp-servers/job-discovery/scraper.py", "--mcp"],
+      "args": [
+        "mcp-servers/job-discovery/scraper.py",
+        "--mcp"
+      ],
       "description": "Discover and score postings against your profile"
     },
     "ftt-form-parser": {
       "command": "python3",
-      "args": ["mcp-servers/form-parser/form_parser.py", "--mcp"],
+      "args": [
+        "mcp-servers/form-parser/form_parser.py",
+        "--mcp"
+      ],
       "description": "Extract application form fields and suggest answers from profile.yaml"
     }
-  }
+  },
+  "_comment": "PLANNED SHAPE \u2014 the --mcp entry points are on the roadmap and do not exist yet. Today, agents drive ftt via the CLI (see README 'Agent mode')."
 }

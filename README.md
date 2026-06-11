@@ -48,11 +48,15 @@ Email sync (Gmail today; more providers on the roadmap):
 python3 mcp-servers/gmail-server/gmail_tracker.py --sync --days 30
 ```
 
-## Agent mode (MCP)
+## Agent mode
 
-Copy `.mcp.json.example` to your project as `.mcp.json` (Claude Code) or wire the
-same commands into your Copilot MCP config. Then ask your agent to run the loop:
-discover → validate → score → apply → track → follow up.
+This toolkit was built to be driven by an AI agent. Today that works through the
+CLI: open this repo in Claude Code (or Copilot with terminal access), and the agent
+runs the loop — discover → validate (`skills/job-search-validation/`) → score →
+apply → track → follow up — by calling the same commands you would.
+
+Native MCP server entry points (so any MCP client can wire in without shell access)
+are on the roadmap; `.mcp.json.example` sketches the planned shape.
 
 ## Just give me the app
 
@@ -62,6 +66,7 @@ the path.
 
 ## Roadmap
 
+- [ ] Native MCP server entry points (`--mcp`) for gmail-server, job-discovery, form-parser
 - [ ] Desktop launcher (Tauri/Electron) with first-run profile wizard
 - [ ] Email providers beyond Gmail: Microsoft 365 / Outlook (Graph), generic IMAP
 - [ ] Calendar: ICS export for interviews first, then Google/Microsoft adapters
