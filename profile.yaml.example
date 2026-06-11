@@ -1,0 +1,114 @@
+# ============================================================================
+# forget-the-thunderdome (ftt) — profile configuration template
+#
+# Copy this file to `profile.yaml` at the repo root and fill in YOUR data.
+# Everything below is OBVIOUSLY FAKE placeholder data — replace all of it.
+#
+#   cp profile.yaml.example profile.yaml
+#
+# You can also point the tool at a profile anywhere on disk:
+#   export FTT_PROFILE=/path/to/profile.yaml
+#
+# profile.yaml is gitignored by convention — NEVER commit your real profile.
+# ============================================================================
+
+# ── Who you are ─────────────────────────────────────────────────────────────
+identity:
+  name: "Alex Example"
+  first_name: "Alex"
+  last_name: "Example"
+  email: "alex@example.com"
+  phone: "+1-555-555-0100"
+  location: "Anytown, USA"
+  city: "Anytown"
+  state: "ST"
+  zip: "00000"
+  country: "United States"
+  linkedin: "https://www.linkedin.com/in/alex-example"
+  github: "https://github.com/alex-example"
+
+# ── What you're looking for ─────────────────────────────────────────────────
+search:
+  # Job titles to search for and match against
+  target_roles:
+    - "Senior Software Engineer"
+    - "Staff Engineer"
+    - "Engineering Manager"
+  # Domain keywords used to score / tag postings
+  keywords:
+    - "Backend"
+    - "Cloud"
+    - "Distributed Systems"
+  # Minimum acceptable base salary (USD/year). Set to 0 to disable filtering.
+  min_salary: 100000
+  # Only consider fully-remote roles?
+  remote_only: true
+  # Acceptable locations (used when remote_only is false)
+  locations:
+    - "Remote"
+    - "Anytown, USA"
+  # Companies you're especially interested in (used for scoring and for
+  # recognizing company names in recruiter emails)
+  target_companies:
+    - "Example Corp"
+    - "Acme Inc"
+
+# ── Your story (feeds cover letters and form answers) ───────────────────────
+narrative:
+  # One-paragraph elevator pitch, written in first person
+  elevator_pitch: >-
+    I'm a software engineer with 10 years of experience building reliable
+    backend systems. I enjoy turning ambiguous problems into shipped,
+    well-tested software.
+  # Short bullet-style strengths used in cover letters
+  key_strengths:
+    - "Designed and scaled a payments API serving 1M requests/day"
+    - "Led a team of 5 engineers through a major platform migration"
+    - "Reduced infrastructure costs 30% through observability-driven tuning"
+  # A one-line summary of your technical toolbox
+  tech_summary: "Python, Go, SQL, AWS, Kubernetes, PostgreSQL"
+  # Work history, most recent first
+  work_history:
+    - company: "Example Corp"
+      title: "Senior Software Engineer"
+      years: "2019-2025"
+      highlights:
+        - "Built the order-processing pipeline (99.99% uptime)"
+        - "Mentored 4 junior engineers"
+    - company: "Acme Inc"
+      title: "Software Engineer"
+      years: "2015-2019"
+      highlights:
+        - "Shipped the v2 public API"
+
+# ── Canned answers for common screening questions ───────────────────────────
+# The form-parser uses these to pre-fill application forms.
+answers:
+  years_experience: "10"
+  work_authorization: "US Citizen"
+  visa_sponsorship: "Not required"
+  availability: "Two weeks notice"
+  notice_period: "Two weeks"
+  employment_type: "Full-time Permanent"
+  about_you: >-
+    I'm a software engineer with 10 years of experience building backend
+    systems. Most recently at Example Corp I built the order-processing
+    pipeline and mentored a team of junior engineers.
+  why_interested: >-
+    This role combines backend systems at scale with a product I admire.
+    I'm eager to contribute while continuing to grow as an engineer.
+  proudest_project: >-
+    The order-processing pipeline at Example Corp — designed for 99.99%
+    uptime and processing 1M requests/day.
+  why_leaving: "Looking for a new challenge after a successful tenure."
+
+# ── Provider configuration (placeholders) ───────────────────────────────────
+email:
+  # One of: gmail | msgraph | imap
+  # Only "gmail" is currently implemented (see docs/providers/gmail-setup.md).
+  provider: "gmail"
+
+calendar:
+  # One of: ics | google | msgraph
+  # Calendar integration is a placeholder — not yet implemented.
+  provider: "ics"

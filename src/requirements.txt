@@ -1,0 +1,31 @@
+# Job Search Automation — Python dependencies
+# Install: pip install -r requirements.txt
+
+# ── Core (always required) ────────────────────────────────────────────────
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+pyyaml>=6.0
+
+# ── Search (required for crewAI DuckDuckGo fallback) ─────────────────────
+duckduckgo-search>=5.3.0
+
+# ── crewAI agent stack ────────────────────────────────────────────────────
+crewai>=0.67.0
+crewai-tools>=0.12.0
+
+# ── AutoGen cover letter agent ────────────────────────────────────────────
+pyautogen>=0.2.35
+
+# ── LLM providers (install whichever you use) ─────────────────────────────
+openai>=1.40.0
+anthropic>=0.34.0
+
+# ── LangChain LLM wrappers (optional: needed for crewAI custom LLM) ───────
+langchain-openai>=0.1.20
+langchain-anthropic>=0.1.20
+langchain-community>=0.2.0
+
+# ── Gmail MCP server (existing) ───────────────────────────────────────────
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-api-python-client>=2.100.0

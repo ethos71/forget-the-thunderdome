@@ -1,0 +1,15 @@
+# Your real profile — NEVER commit personal data
+profile.yaml
+
+# Local tracker database and generated data
+data/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Credentials (kept under ~/.mcp/config/ by default, but just in case)
+*credentials*.json
+*token*.pickle

@@ -1,0 +1,39 @@
+========================================
+MANUAL JOB SEARCH LINKS (COPY & PASTE)
+========================================
+
+These links don't need to be scraped - you can open them directly or export jobs:
+
+LINKEDIN (Top 10 + remote remote + $150K+):
+https://www.linkedin.com/jobs/search/?keywords=Principal%20Engineer&location=Remote&salary=150000
+
+https://www.linkedin.com/jobs/search/?keywords=Staff%20Engineer&location=Remote&salary=150000
+
+https://www.linkedin.com/jobs/search/?keywords=Architect%20Backend&location=Remote&salary=150000
+
+INDEED ($150K+, remote):
+https://www.indeed.com/jobs?q=Principal+Engineer+%24150000&l=Remote
+
+https://www.indeed.com/jobs?q=Staff+Engineer+%24150000&l=Remote
+
+ZIPRECRUITER ($150K+, remote):
+https://www.ziprecruiter.com/Jobs/Remote?search=Principal+Engineer&salary=150000
+
+https://www.ziprecruiter.com/Jobs/Remote?search=Staff+Engineer&salary=150000
+
+HackerNews Jobs:
+https://news.ycombinator.com/newest?fnid=job.who+is+hiring
+
+AngelList/Wellfound:
+https://wellfound.com/jobs?job_type=Full-Time&locations=Remote&experience_level=Lead%2CPrincipal%2CDirector
+
+LEVELS.FYI:
+https://www.levels.fyi/jobs?level_ids=7,8
+
+QUICK COPY-PASTE STRATEGY:
+1. Open each link above in your browser
+2. Filter by: Remote, $150K+, Principal/Staff/Architect
+3. Copy job titles and company names
+4. Use form parser on URLs to generate applications
+
+This is faster than trying to automate web scraping against sites that block it.

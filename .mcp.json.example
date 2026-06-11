@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "ftt-gmail-tracker": {
+      "command": "python3",
+      "args": ["mcp-servers/gmail-server/gmail_tracker.py", "--mcp"],
+      "description": "Sync + classify recruiter email (interview/offer/rejection) into the local pipeline"
+    },
+    "ftt-job-discovery": {
+      "command": "python3",
+      "args": ["mcp-servers/job-discovery/scraper.py", "--mcp"],
+      "description": "Discover and score postings against your profile"
+    },
+    "ftt-form-parser": {
+      "command": "python3",
+      "args": ["mcp-servers/form-parser/form_parser.py", "--mcp"],
+      "description": "Extract application form fields and suggest answers from profile.yaml"
+    }
+  }
+}

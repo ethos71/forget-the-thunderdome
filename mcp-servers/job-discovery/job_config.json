@@ -1,0 +1,83 @@
+{
+  "_comment": "TODO(ftt): edit the filters and searches below to match your profile.yaml search section (target_roles, keywords, min_salary). Example values shown.",
+  "filters": {
+    "location": "remote",
+    "salary_min": 100000,
+    "levels": ["Senior", "Staff", "Lead", "Manager"],
+    "keywords": ["engineer", "developer", "architect", "lead"]
+  },
+  "job_boards": {
+    "linkedin": {
+      "enabled": true,
+      "searches": [
+        "Senior Software Engineer remote",
+        "Staff Engineer remote",
+        "Engineering Manager remote"
+      ],
+      "url_pattern": "https://www.linkedin.com/jobs/search/?keywords={query}&location=Remote&geoId=103644278",
+      "selector_job_card": "div[data-job-id]",
+      "selector_title": "h3",
+      "selector_company": "div.company-name",
+      "selector_location": "span.job-search-card__location"
+    },
+    "indeed": {
+      "enabled": true,
+      "searches": [
+        "Senior Software Engineer remote",
+        "Staff Engineer remote",
+        "Engineering Manager remote"
+      ],
+      "url_pattern": "https://www.indeed.com/jobs?q={query}&l=Remote&radius=0&jt=permanent",
+      "selector_job_card": "div[data-job-id]",
+      "selector_title": "h2.jobTitle",
+      "selector_company": "span.companyName",
+      "selector_location": "div.companyLocation",
+      "selector_salary": "div[data-salary-snippet-in-job-search]"
+    },
+    "workday": {
+      "enabled": true,
+      "_comment": "Replace with the Workday career-site URLs of companies you are targeting.",
+      "companies": [
+        {
+          "name": "Example Corp",
+          "url": "https://examplecorp.wd1.myworkdayjobs.com/en-US/examplecorp/jobs",
+          "search_q": "Senior Engineer"
+        },
+        {
+          "name": "Acme Inc",
+          "url": "https://acme.wd1.myworkdayjobs.com/en-US/acme/jobs",
+          "search_q": "Engineer"
+        }
+      ]
+    },
+    "dice": {
+      "enabled": true,
+      "url_base": "https://www.dice.com/jobs",
+      "searches": [
+        "Senior Software Engineer remote",
+        "Staff Engineer remote"
+      ],
+      "selector_job_card": "div.search-result",
+      "selector_title": "h2.card-title-link",
+      "selector_company": "div.card-company-name",
+      "selector_location": "span.card-location"
+    }
+  },
+  "output": {
+    "database": "data/job_tracker.db",
+    "table": "discovered_jobs",
+    "csv_export": "data/discovered_jobs_daily.csv"
+  },
+  "scraper": {
+    "timeout_ms": 30000,
+    "headless": true,
+    "stealth_mode": true,
+    "user_agents": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ],
+    "max_retries": 3,
+    "delay_between_requests_ms": 1000
+  }
+}
