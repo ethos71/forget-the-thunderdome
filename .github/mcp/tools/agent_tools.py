@@ -449,7 +449,7 @@ def delegate_task(
         client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
-            default_headers={"X-Title": "SmartBallz MCP"},
+            default_headers={"X-Title": "dom MCP"},
         )
 
     # ── Read file contents ───────────────────────────────────────────────────
@@ -719,26 +719,16 @@ def get_context() -> dict:
     # Memory index
     try:
         memory_index = _PROJECT_ROOT / "docs" / "robots" / "MEMORY.md"
-        if not memory_index.exists():
-            memory_index = Path.home() / ".claude" / "projects" / \
-                "-home-dominick-workspace-smartballz" / "memory" / "MEMORY.md"
         if memory_index.exists():
             result["memory_index"] = memory_index.read_text(encoding="utf-8")[:1500]
     except Exception:
         pass  # silent-ok: best-effort — must not break the caller
 
-    # Static constants (avoids reading CLAUDE.md every session)
+    # Static constants (avoids reading CLAUDE.md every session). Generic for this
+    # repo — the toolkit's default get_context() ships another project's specifics;
+    # keep only what applies here so nothing foreign lands in a public tree.
     result["constants"] = {
-        "leagues": [
-            {"name": "Monster Island #6273", "league_id": 24, "format": "14-cat H2H Auction $320"},
-            {"name": "Steamboat Willie #53605", "league_id": 25, "format": "14-cat H2H Snake"},
-        ],
-        "primary_user": "ethos71",
-        "prod_port": 8501,
-        "dev_port": 8080,
-        "react_dev_port": 5173,
-        "db_path": "data/smartballz.db",
-        "scoring": "H=1,2B=2,3B=3,HR=4,R=1,RBI=1,SB=2,BB=1",
+        "db_path": "data/job_tracker.db",
     }
 
     # Tool reference location

@@ -16,3 +16,6 @@ venv/
 
 # dom delegation usage log + agent_tools backups (read by dom usage)
 .dom/
+
+# @dom private roster — never ship into this PUBLIC repo (Decision A)
+.github/dom-bots.json
