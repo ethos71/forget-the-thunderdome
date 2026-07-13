@@ -3,10 +3,12 @@
 Job Search CLI - Command-line interface for automation system
 Usage:
   python3 job_cli.py dashboard               # View metrics
+  python3 job_cli.py dashboard --html [path] # Render HTML dashboard (default dashboard/index.html)
   python3 job_cli.py apply <company> <role>  # Log application + cover letter
   python3 job_cli.py letter <company> <role> # Generate cover letter
   python3 job_cli.py interview <app_id>      # Schedule interview
   python3 job_cli.py follow-ups              # Show due follow-ups
+  python3 job_cli.py calendar [--ics path]   # Export interviews to ICS (default data/interviews.ics)
   python3 job_cli.py crew                    # Run crewAI job search
   python3 job_cli.py jobs [--min-score N]    # Review scraped job postings
   python3 job_cli.py promote <job_id>        # Promote job posting → application
@@ -23,6 +25,21 @@ def cmd_dashboard():
     db = JobSearchDB()
     tracker = ApplicationTracker(db)
     print_dashboard(tracker)
+
+def cmd_dashboard_html(out_path: str = "dashboard/index.html"):
+    """Render the dashboard as a self-contained HTML file"""
+    from dashboard_html import render_dashboard_html
+    db = JobSearchDB()
+    tracker = ApplicationTracker(db)
+    path = render_dashboard_html(tracker, out_path=out_path)
+    print(f"✅ HTML dashboard written: {path}")
+
+def cmd_calendar(out_path: str = "data/interviews.ics"):
+    """Export all scheduled interviews to an ICS calendar file"""
+    from calendar_export import export_interviews_ics
+    db = JobSearchDB()
+    path = export_interviews_ics(db, out_path=out_path)
+    print(f"✅ Calendar exported: {path}")
 
 def cmd_apply(company: str, role: str, notes: str = None):
     """Log new application"""
@@ -219,11 +236,13 @@ Job Search Automation CLI
 
 Commands:
   dashboard                  Show job search metrics and summary
+  dashboard --html [path]    Render self-contained HTML dashboard (default dashboard/index.html)
   apply <company> <role>     Log new application (generates cover letter)
   letter <company> <role>    Generate cover letter (AI-powered)
   interview <app_id>         Schedule interview (interactive)
   upcoming                   Show upcoming interviews (7 days)
   follow-ups                 Show applications due for follow-up
+  calendar [--ics path]      Export all interviews to ICS (default data/interviews.ics)
   crew                       Run crewAI multi-agent job search
   jobs [--min-score N]       Review scraped job postings (default: all)
   promote <job_id>           Promote job posting to application
@@ -231,6 +250,8 @@ Commands:
 
 Examples:
   python3 job_cli.py dashboard
+  python3 job_cli.py dashboard --html
+  python3 job_cli.py calendar --ics data/interviews.ics
   python3 job_cli.py crew
   python3 job_cli.py jobs --min-score 70
   python3 job_cli.py promote abc123def456
@@ -249,7 +270,19 @@ if __name__ == '__main__':
 
     try:
         if cmd == 'dashboard':
-            cmd_dashboard()
+            if '--html' in sys.argv:
+                idx = sys.argv.index('--html')
+                out = sys.argv[idx + 1] if idx + 1 < len(sys.argv) else 'dashboard/index.html'
+                cmd_dashboard_html(out)
+            else:
+                cmd_dashboard()
+        elif cmd in ('calendar', 'ics'):
+            out = 'data/interviews.ics'
+            if '--ics' in sys.argv:
+                idx = sys.argv.index('--ics')
+                if idx + 1 < len(sys.argv):
+                    out = sys.argv[idx + 1]
+            cmd_calendar(out)
         elif cmd == 'apply':
             if len(sys.argv) < 4:
                 print("Usage: job_cli.py apply <company> <role> [notes]")

@@ -82,6 +82,17 @@ Major decisions and the reasoning behind them. Update on milestones.
 - 2026-07-13 — Ollama free-tier fallback in `src/ai_config.py` (+ crewAI/AutoGen consumers).
 - 2026-07-13 — Native `--mcp` entry points for gmail-server, job-discovery, form-parser
   (moved off the roadmap; README + `.mcp.json.example` updated).
+- 2026-07-13 — Roadmap sweep (agents fanned out):
+  - HTML dashboard renderer — `job_cli.py dashboard --html` → `src/dashboard_html.py`
+    (self-contained, dependency-free).
+  - ICS calendar export — `job_cli.py calendar` → `src/calendar_export.py` (hand-written
+    RFC-5545, all interviews). Google/MS OAuth adapters still open.
+  - Email providers beyond Gmail: generic IMAP (`mcp-servers/imap-server/`, stdlib, full)
+    and Microsoft Graph (`mcp-servers/graph-server/`, scaffold — needs Azure app + `msal`).
+    Both share the gmail classification categories and run as `--mcp` servers.
+  - Desktop launcher — `launcher/ftt_launcher.py` (Tkinter GUI + first-run profile wizard;
+    Tk imported lazily so it imports headless; `--check` for CI). Tauri ruled out (no Rust);
+    PyInstaller freeze is the documented no-Python packaging step (`launcher/build.sh`).
 
 ---
 

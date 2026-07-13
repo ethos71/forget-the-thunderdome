@@ -1,0 +1,9 @@
+# Microsoft 365 / Outlook (Microsoft Graph) job tracker.
+#
+# This provider is a SCAFFOLD: it is fully structured but cannot be run to
+# completion without an Azure app registration (client id / tenant) AND these
+# packages installed. See docs/providers/microsoft-graph-setup.md.
+msal>=1.28
+requests>=2.31
+# Optional — only needed for the `--mcp` stdio server mode:
+mcp>=1.0.0

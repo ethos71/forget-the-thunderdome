@@ -6,12 +6,7 @@
 #
 # 1. Syncs recent recruiter emails into data/job_tracker.db
 # 2. Prints the CLI dashboard from the local DB
-#
-# TODO(ftt): the original private project also rendered an HTML dashboard
-# (index.html) from the DB plus an apply_ready.yaml curation file. Neither the
-# HTML template nor the renderer script ship in this repo yet. To add one,
-# generate HTML from the queries in src/job_automation.py (ApplicationTracker
-# .get_dashboard) and write it to dashboard/index.html.
+# 3. Renders a self-contained HTML dashboard to dashboard/index.html
 
 set -e
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -29,3 +24,6 @@ python3 mcp-servers/gmail-server/gmail_tracker.py --sync --days 14 \
 
 # 2. Re-render the dashboard from the local DB.
 python3 src/job_cli.py dashboard
+
+# 3. Also render the self-contained HTML dashboard to dashboard/index.html.
+python3 src/job_cli.py dashboard --html

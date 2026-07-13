@@ -41,12 +41,23 @@ python3 src/job_cli.py jobs            # scored postings
 python3 src/job_cli.py follow-ups      # who needs a nudge
 ```
 
-Email sync (Gmail today; more providers on the roadmap):
+Email sync — Gmail, any IMAP mailbox, or Microsoft 365 / Outlook (Graph):
 
 ```bash
-# one-time OAuth setup: docs/providers/gmail-setup.md
+# Gmail (one-time OAuth setup: docs/providers/gmail-setup.md)
 python3 mcp-servers/gmail-server/gmail_tracker.py --sync --days 30
+
+# Any IMAP mailbox (Fastmail, iCloud, self-hosted, …) — set FTT_IMAP_* env,
+# see docs/providers/imap-setup.md
+python3 mcp-servers/imap-server/imap_tracker.py --sync --days 30
+
+# Microsoft 365 / Outlook via Graph — set FTT_GRAPH_* env + register an Azure app,
+# see docs/providers/microsoft-graph-setup.md
+python3 mcp-servers/graph-server/graph_tracker.py --sync --days 30
 ```
+
+All four servers classify recruiter mail into the same local pipeline and also run
+as `--mcp` stdio servers.
 
 ## Agent mode
 
@@ -75,19 +86,30 @@ plain CLI does not.
 
 ## Just give me the app
 
-A cross-platform desktop launcher (Windows / macOS / Linux — no terminal, no Python
-install, guided email setup) is on the roadmap. Until then, the Quickstart above is
-the path.
+A desktop launcher with a first-run profile wizard ships in `launcher/` — a windowed
+app (no terminal) that writes your `profile.yaml` and runs the loop with buttons:
+
+```bash
+python3 launcher/ftt_launcher.py        # opens the GUI (needs a display)
+python3 launcher/ftt_launcher.py --check  # headless self-check
+```
+
+To hand someone a double-click app with no Python install, freeze it per-OS with
+PyInstaller — `launcher/build.sh` does this (see `launcher/README.md`).
 
 ## Roadmap
 
-Shipped: native MCP server entry points (`--mcp`) for gmail-server, job-discovery,
-and form-parser — see **Agent mode** above.
+Shipped (see the sections above): native `--mcp` servers for gmail/job-discovery/
+form-parser; **IMAP + Microsoft Graph email providers**; **HTML dashboard**
+(`job_cli.py dashboard --html`); **ICS calendar export** (`job_cli.py calendar`);
+**desktop launcher** with first-run profile wizard.
 
-- [ ] Desktop launcher (Tauri/Electron) with first-run profile wizard
-- [ ] Email providers beyond Gmail: Microsoft 365 / Outlook (Graph), generic IMAP
-- [ ] Calendar: ICS export for interviews first, then Google/Microsoft adapters
-- [ ] Dashboard HTML renderer (CLI dashboard works today)
+Still open:
+
+- [ ] Calendar: native Google / Microsoft OAuth adapters (ICS export ships today)
+- [ ] Microsoft Graph email: end-to-end verification + token refresh/backoff (the
+      provider is scaffolded; needs an Azure app registration to exercise)
+- [ ] Package the launcher into signed per-OS installers (PyInstaller/CI)
 
 ## Privacy
 

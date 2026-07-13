@@ -1,0 +1,6 @@
+# Generic IMAP job tracker — core needs NO third-party packages.
+# It uses only the Python standard library: imaplib, email, sqlite3, argparse.
+# (profile.yaml parsing reuses the repo's PyYAML dependency, if present.)
+#
+# The ONLY optional dependency is for the `--mcp` stdio server mode:
+mcp>=1.0.0
