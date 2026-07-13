@@ -30,12 +30,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-try:
-    from mcp.server import Server
-    from mcp.types import Tool, TextContent
-    MCP_AVAILABLE = True
-except ImportError:
-    MCP_AVAILABLE = False
+# Note: the `mcp` package is imported lazily inside _run_mcp() (see --mcp) so the
+# normal CLI keeps working even when `mcp` is not installed.
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -270,8 +266,8 @@ class GmailJobTracker:
                 print(f"Error reading message {m['id']}: {e}")
         return emails
 
-    def sync_to_db(self, days_back: int = 30) -> dict:
-        emails = self.fetch_emails(days_back=days_back)
+    def sync_to_db(self, days_back: int = 30, max_results: int = 50) -> dict:
+        emails = self.fetch_emails(days_back=days_back, max_results=max_results)
         summary = {
             'total': len(emails),
             'logged': 0,
@@ -390,63 +386,58 @@ class GmailJobTracker:
 
 # ─── MCP Server ───────────────────────────────────────────────────────────────
 
-if MCP_AVAILABLE:
-    server = Server("gmail-job-tracker")
+def _run_mcp():
+    """Launch the stdio MCP server exposing the Gmail tracker as MCP tools.
 
-    @server.list_tools()
-    async def list_tools():
-        return [
-            Tool(name="get_recruiter_emails",     description="Fetch recruiter/job emails from past N days (read-only, no DB write)",
-                 inputSchema={"type": "object", "properties": {"days_back": {"type": "integer", "default": 14}}}),
-            Tool(name="sync_gmail_to_tracker",    description="Sync Gmail job emails to job_tracker database",
-                 inputSchema={"type": "object", "properties": {"days_back": {"type": "integer", "default": 30}}}),
-            Tool(name="get_email_summary",        description="Print a structured summary of job emails: interviews, offers, rejections, companies",
-                 inputSchema={"type": "object", "properties": {"days_back": {"type": "integer", "default": 30}}}),
-            Tool(name="get_interview_pipeline",   description="Return only interview invites and offers from recent emails",
-                 inputSchema={"type": "object", "properties": {"days_back": {"type": "integer", "default": 60}}}),
-        ]
+    Imports `mcp` lazily so the normal CLI runs without the package installed.
+    Tools construct GmailJobTracker() on call (which authenticates), keeping
+    server startup / tool registration cheap and side-effect free.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+    except ImportError:
+        print("MCP support requires the 'mcp' package: pip install mcp", file=sys.stderr)
+        sys.exit(1)
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict):
+    mcp = FastMCP("gmail-job-tracker")
+
+    @mcp.tool()
+    def sync_gmail_to_tracker(days: int = 30, max_results: int = 50) -> dict:
+        """Sync + classify recruiter/job email from Gmail into the local pipeline.
+
+        Fetches the past `days` of recruiter-style email (up to `max_results`),
+        classifies each message (interview_invite / offer / rejection /
+        recruiter_outreach / application_update), upserts applications and logs
+        interactions into the job_tracker DB. Returns a JSON-serializable summary.
+        """
         tracker = GmailJobTracker()
-        days_back = arguments.get('days_back', 30)
+        return tracker.sync_to_db(days_back=days, max_results=max_results)
 
-        if name == "get_recruiter_emails":
-            emails = tracker.get_raw_emails(days_back=days_back)
-            # Strip full body to save context
-            for e in emails:
-                e['body'] = e['body'][:400] if e['body'] else ''
-            return [TextContent(type="text", text=json.dumps(emails, indent=2, default=str))]
+    @mcp.tool()
+    def get_email_summary(days: int = 30, max_results: int = 50) -> dict:
+        """Return a structured summary of recent job email.
 
-        elif name == "sync_gmail_to_tracker":
-            summary = tracker.sync_to_db(days_back=days_back)
-            return [TextContent(type="text", text=json.dumps(summary, indent=2, default=str))]
+        Same operation as the CLI --summary: syncs the past `days` of email to
+        the DB and returns totals, counts by type, and the interviews, offers,
+        rejections and active companies detected. Returns a JSON-serializable dict.
+        """
+        tracker = GmailJobTracker()
+        return tracker.sync_to_db(days_back=days, max_results=max_results)
 
-        elif name == "get_email_summary":
-            summary = tracker.sync_to_db(days_back=days_back)
-            lines = [
-                f"Gmail Summary — Past {days_back} Days",
-                f"Total emails: {summary['total']}  |  Logged: {summary['logged']}",
-                "",
-                "By type: " + ", ".join(f"{k}={v}" for k, v in summary['by_type'].items()),
-            ]
-            if summary['interviews']:
-                lines.append(f"\nINTERVIEWS ({len(summary['interviews'])}):")
-                lines += [f"  • {i['company']} — {i['role']}" for i in summary['interviews']]
-            if summary['offers']:
-                lines.append(f"\nOFFERS ({len(summary['offers'])}):")
-                lines += [f"  • {o['company']} — {o['role']}" for o in summary['offers']]
-            if summary['rejections']:
-                lines.append(f"\nRejections: {', '.join(r['company'] for r in summary['rejections'])}")
-            lines.append(f"\nActive companies: {', '.join(summary['companies'])}")
-            return [TextContent(type="text", text="\n".join(lines))]
+    @mcp.tool()
+    def get_recruiter_emails(days: int = 14, max_results: int = 20) -> list:
+        """Fetch raw parsed recruiter/job emails from the past `days` (no DB write).
 
-        elif name == "get_interview_pipeline":
-            emails = tracker.fetch_emails(days_back=days_back)
-            pipeline = [e for e in emails if e['email_type'] in ('interview_invite', 'offer')]
-            return [TextContent(type="text", text=json.dumps(pipeline, indent=2, default=str))]
+        Read-only inspection of the classified email stream; message bodies are
+        truncated to keep the payload small. Returns a list of dicts.
+        """
+        tracker = GmailJobTracker()
+        emails = tracker.get_raw_emails(days_back=days, max_results=max_results)
+        for e in emails:
+            e['body'] = (e['body'] or '')[:400]
+        return emails
 
-        return [TextContent(type="text", text="Unknown tool")]
+    mcp.run()
 
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -456,9 +447,14 @@ if __name__ == '__main__':
     parser.add_argument('--sync',    action='store_true', help='Sync emails to DB and print summary')
     parser.add_argument('--summary', action='store_true', help='Print summary without DB write')
     parser.add_argument('--raw',     action='store_true', help='Dump raw parsed emails as JSON')
+    parser.add_argument('--mcp',     action='store_true', help='Run as a stdio MCP server instead of the CLI')
     parser.add_argument('--days',    type=int, default=30, help='Days back to search (default: 30)')
     parser.add_argument('--max',     type=int, default=50, help='Max emails to fetch (default: 50)')
     args = parser.parse_args()
+
+    if args.mcp:
+        _run_mcp()
+        sys.exit(0)
 
     tracker = GmailJobTracker()
 

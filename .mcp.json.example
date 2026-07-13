@@ -23,7 +23,12 @@
         "--mcp"
       ],
       "description": "Extract application form fields and suggest answers from profile.yaml"
+    },
+    "dom-agent": {
+      "command": "python3",
+      "args": ["-c", "import sys; sys.path.insert(0, '.github/mcp'); from tools.agent_tools import delegate_task; print('dom agent ready')"],
+      "cwd": "YOUR_PROJECT_ROOT"
     }
   },
-  "_comment": "PLANNED SHAPE \u2014 the --mcp entry points are on the roadmap and do not exist yet. Today, agents drive ftt via the CLI (see README 'Agent mode')."
+  "_comment": "The three ftt-* servers are the real --mcp entry points; they run locally over stdio (no network, no daemon) and share the same profile.yaml + data/job_tracker.db as the CLI. dom-agent is the dev-time free-tier delegation agent. Copy to .mcp.json and set YOUR_PROJECT_ROOT to your absolute repo path."
 }

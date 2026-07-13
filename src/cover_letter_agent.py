@@ -3,8 +3,11 @@
 AutoGen-powered cover letter generator.
 Uses a 2-agent conversation: Researcher + Writer.
 
+Uses AutoGen when an LLM provider is available — a paid key (OPENAI_API_KEY /
+ANTHROPIC_API_KEY) or, with no paid key, a local Ollama server
+(http://localhost:11434) automatically as a free fallback.
 Falls back to template-based generation on ANY failure
-(missing API key, import error, network timeout, etc.).
+(no provider at all, import error, network timeout, etc.).
 
 Usage:
   from cover_letter_agent import generate_cover_letter

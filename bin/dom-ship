@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# dom-ship — the NON-GHA way to prod (pattern learned from @smartballz's
+# bin/deploy-prod). Runs the full policy gate LOCALLY (universal evals + usage
+# cost audit) with ZERO GitHub Actions minutes, logs every run for audit, and
+# reports ready/blocked — so you can verify + ship even when over the monthly
+# GHA limit and drowning in failure emails.
+#
+#   bin/dom-ship            # run the gate; on green, ready to merge/deploy
+#   bin/dom-ship --check    # read-only: gate result only, no side effects
+#
+# TWO WAYS TO PROD (dom convention, mirrors smartballz):
+#   • NON-GHA (this): bin/dom-ship → merge/deploy locally. 0 Actions minutes.
+#   • GHA (opt-in):   set repo variable GHA_ENABLED=true so workflows run on
+#                     PRs/pushes; unset (default) they SKIP — no minutes, no
+#                     failure emails. `workflow_dispatch` always runs manually.
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+LOG=".dom/ship.log"; mkdir -p .dom
+ts() { date '+%Y-%m-%d %H:%M:%S'; }
+
+GATE=".github/skills/eval-enforcement/scripts/check-policy.sh"
+[[ -f "$GATE" ]] || { echo "no check-policy.sh — is dom installed? (rerun install.sh)"; exit 2; }
+
+echo "── non-GHA ship gate (local · 0 Actions minutes) ─────────────"
+if bash "$GATE"; then
+  echo "[$(ts)] PASS  ${1:-ship}" >> "$LOG"
+  echo ""
+  if [[ "${1:-}" == "--check" ]]; then
+    echo "✅ gate GREEN (--check, read-only). Ready to ship."
+  else
+    echo "✅ READY TO SHIP — gates green locally. Merge/deploy to prod."
+    echo "   GHA equivalent: set repo variable GHA_ENABLED=true to run in Actions."
+  fi
+else
+  echo "[$(ts)] FAIL  ${1:-ship}" >> "$LOG"
+  echo ""; echo "❌ BLOCKED — a gate failed above. Fix before shipping to prod."
+  exit 1
+fi

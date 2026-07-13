@@ -13,3 +13,6 @@ venv/
 # Credentials (kept under ~/.mcp/config/ by default, but just in case)
 *credentials*.json
 *token*.pickle
+
+# dom delegation usage log + agent_tools backups (read by dom usage)
+.dom/

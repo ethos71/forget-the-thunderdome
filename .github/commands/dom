@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# dom — umbrella command for the dom AI cost-cutting toolkit.
+#
+# One entry point for every dom tool, so consumers don't grow N loose
+# commands and nothing collides with Claude Code built-ins (/usage etc).
+#
+#   dom usage [--since N] [--json] [--md]   token/cost/latency report + Ollama audit
+#   dom report [--since N]                  save usage report to docs/usage-reports/<date>.md
+#   dom status                              AI team readiness (ollama/route/gemini/keys)
+#   dom task <file> 'change' ['test']       delegate an atomic code task (auto-routed)
+#   dom pull                                pull the recommended local code model
+#   dom ask 'question'                      free local Q&A (Ollama)
+#   dom route [task-type]                   which tier should handle a task
+#   dom delegate <bot> "task" [opts]        @dom: write a task into a bot's TODO/memory
+#   dom tasks [<bot>]                       open/done delegated-task counts across bots
+#   dom intake [<bot>]                      a bot's own open @dom tasks (bot-side)
+#   dom bots                                @dom's bot roster
+#   dom update [--check]                    refresh this repo's toolkit from @dom (the boss)
+#   dom start | dom restart                 repo's app lifecycle (if the repo ships them)
+#   dom help                                this text
+#
+# Repo-specific commands: `dom start`/`dom restart` dispatch to
+# .github/commands/start|restart when the repo provides them (smartballz
+# pattern) — dom itself stays generic.
+
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+
+cmd="${1:-help}"
+shift || true
+
+case "$cmd" in
+  usage|--usage)
+    exec "$ROOT/.github/skills/dom-usage/scripts/usage.sh" "$@"
+    ;;
+  report)
+    # Write the markdown usage report to docs/usage-reports/<date>.md
+    mkdir -p "$ROOT/docs/usage-reports"
+    OUT="$ROOT/docs/usage-reports/$(date +%Y-%m-%d).md"
+    "$ROOT/.github/skills/dom-usage/scripts/usage.sh" --md "$@" > "$OUT"
+    echo "wrote $OUT"
+    ;;
+  delegate)
+    exec "$ROOT/.github/skills/dom-delegate/scripts/delegate.sh" add "$@"
+    ;;
+  tasks)
+    exec "$ROOT/.github/skills/dom-delegate/scripts/delegate.sh" list "$@"
+    ;;
+  intake)
+    # bot-side: default to THIS repo's bot name (dir basename) if none given
+    exec "$ROOT/.github/skills/dom-delegate/scripts/delegate.sh" intake "$@"
+    ;;
+  bots)
+    exec "$ROOT/.github/skills/dom-delegate/scripts/delegate.sh" bots
+    ;;
+  update)
+    # Self-update from @dom (the boss / source of truth): re-run dom's
+    # install.sh into THIS repo. Refreshes the dom-managed files
+    # (agent_tools, commands, skills, evals, agents) to dom@main — install.sh
+    # backs up agent_tools + preserves custom sbz imports first.
+    # Source: $DOM_SOURCE, else ~/workspace/dom, else curl github.com/ethos71/dom.
+    SRC="${DOM_SOURCE:-$HOME/workspace/dom}"
+    if [[ "${1:-}" == "--check" ]]; then
+      if [[ -f "$SRC/install.sh" ]]; then
+        echo "dom update: source is local clone $SRC"
+        git -C "$SRC" log --oneline -1 2>/dev/null | sed 's/^/  @dom @main: /' || true
+      else
+        echo "dom update: would fetch from github.com/ethos71/dom (no local $SRC)"
+      fi
+      exit 0
+    fi
+    if [[ -f "$SRC/install.sh" ]]; then
+      echo "Updating from @dom (local: $SRC) …"
+      ( cd "$ROOT" && bash "$SRC/install.sh" )
+    else
+      echo "Updating from @dom (github.com/ethos71/dom) …"
+      ( cd "$ROOT" && curl -fsSL https://raw.githubusercontent.com/ethos71/dom/main/install.sh | bash )
+    fi
+    ;;
+  status)
+    # sbz-status lives in sbz-tools.sh (function library, not a script)
+    # shellcheck disable=SC1091
+    set +u; source "$HERE/sbz-tools.sh"; set -u
+    sbz-status
+    ;;
+  task|--task)
+    # Delegate an atomic single-file code task via the auto-router
+    # (SIMPLE→Ollama free … ARCHITECTURAL→Opus). The dom-branded command;
+    # `@<agent> --task <file> 'change' 'test'` maps here.
+    # shellcheck disable=SC1091
+    set +u; source "$HERE/sbz-tools.sh"; set -u
+    sbz "$@"
+    ;;
+  pull)
+    # shellcheck disable=SC1091
+    set +u; source "$HERE/sbz-tools.sh"; set -u
+    sbz-pull
+    ;;
+  ask)
+    exec "$HERE/ask" "$@"
+    ;;
+  route)
+    exec "$HERE/route-task.sh" "$@"
+    ;;
+  start|restart|health-check)
+    target="$HERE/$cmd"
+    if [[ -x "$target" ]]; then
+      exec "$target" "$@"
+    fi
+    echo "dom: this repo has no '$cmd' command (.github/commands/$cmd not found)."
+    echo "     Repos with an app ship their own start/restart there (see smartballz)."
+    exit 1
+    ;;
+  help|-h|--help)
+    sed -n '2,24p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+    ;;
+  *)
+    echo "dom: unknown subcommand '$cmd' — try: dom help"
+    exit 1
+    ;;
+esac

@@ -20,7 +20,9 @@ from urllib.parse import urlencode
 
 import requests
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+# playwright is imported lazily inside the scraper search methods so that the CLI
+# entry point and the --mcp server can start (and register tools) without it
+# installed; it is only required when a live LinkedIn/Indeed scrape actually runs.
 
 # Setup logging
 logging.basicConfig(
@@ -191,11 +193,13 @@ class LinkedInScraper:
 
     def search(self) -> List[JobListing]:
         """Scrape LinkedIn job listings using Playwright"""
+        from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+
         jobs = []
-        
+
         if not self.config.get('enabled', True):
             return jobs
-        
+
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -321,11 +325,13 @@ class IndeedScraper:
 
     def search(self) -> List[JobListing]:
         """Scrape Indeed job listings using Playwright"""
+        from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+
         jobs = []
-        
+
         if not self.config.get('enabled', True):
             return jobs
-        
+
         try:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
@@ -664,19 +670,68 @@ class JobDiscoveryScraper:
         return summary
 
 
+def _run_mcp():
+    """Launch the stdio MCP server exposing job discovery as MCP tools.
+
+    Imports `mcp` lazily so the normal CLI runs without the package installed.
+    Tools construct JobDiscoveryScraper() on call, so server startup / tool
+    registration does not require job_config.json to be present.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+    except ImportError:
+        print("MCP support requires the 'mcp' package: pip install mcp", file=sys.stderr)
+        sys.exit(1)
+
+    mcp = FastMCP("ftt-job-discovery")
+    config_file = Path(__file__).parent / 'job_config.json'
+
+    @mcp.tool()
+    def discover_jobs() -> dict:
+        """Discover and score job postings against the search config.
+
+        Runs the enabled scrapers (LinkedIn / Indeed / Workday / Dice) from
+        job_config.json, scores each posting, stores new ones in the local DB,
+        and returns a summary dict (newly_inserted, total_discovered_today,
+        ready_to_apply, by_source).
+        """
+        if not config_file.exists():
+            return {"error": f"Config file not found: {config_file}"}
+        scraper = JobDiscoveryScraper(str(config_file))
+        return scraper.run()
+
+    @mcp.tool()
+    def get_scored_jobs(source: str, limit: int = 10) -> list:
+        """Return recent scored, not-yet-applied postings for a given source.
+
+        `source` is one of 'linkedin', 'indeed', 'workday', 'dice'. Results are
+        ordered newest first, each with title, company, location, url and
+        match_score. Returns a list of dicts.
+        """
+        if not config_file.exists():
+            return [{"error": f"Config file not found: {config_file}"}]
+        scraper = JobDiscoveryScraper(str(config_file))
+        return scraper.db.get_jobs_by_source(source, limit=limit)
+
+    mcp.run()
+
+
 def main():
     script_dir = Path(__file__).parent
     config_file = script_dir / 'job_config.json'
-    
+
     if not config_file.exists():
         logger.error(f"Config file not found: {config_file}")
         sys.exit(1)
-    
+
     scraper = JobDiscoveryScraper(str(config_file))
     summary = scraper.run()
-    
+
     print(json.dumps(summary, indent=2))
 
 
 if __name__ == '__main__':
-    main()
+    if '--mcp' in sys.argv[1:]:
+        _run_mcp()
+    else:
+        main()

@@ -1,0 +1,142 @@
+name: AI PR Review
+
+# GHA-minute saver (pattern from smartballz deploy.yml): both jobs are gated
+# on the repo VARIABLE `GHA_ENABLED`. Unset (default) → jobs SKIP: no runner
+# requested, no minutes burned, no over-limit/failure emails. Opt in with
+#   Settings → Secrets and variables → Actions → Variables → GHA_ENABLED=true
+# `workflow_dispatch` always runs manually. The NON-GHA equivalent is
+# `bin/dom-ship` (runs the same gate locally, 0 Actions minutes).
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # Hard gate: the 4 universal evals + the dom-usage Ollama cost audit.
+  # This is the check that must be green to merge.
+  evals:
+    if: ${{ vars.GHA_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: check-policy (universal evals + usage cost gate)
+        run: bash .github/skills/eval-enforcement/scripts/check-policy.sh
+
+  review:
+    if: ${{ vars.GHA_ENABLED == 'true' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get diff stats
+        id: diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          LINES=$(git diff origin/${{ github.base_ref }}...HEAD --stat | tail -1)
+          CHANGED=$(git diff origin/${{ github.base_ref }}...HEAD --name-only | wc -l)
+          INSERTIONS=$(git diff origin/${{ github.base_ref }}...HEAD | grep '^+' | grep -v '^+++' | wc -l)
+          echo "lines=$LINES" >> $GITHUB_OUTPUT
+          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          echo "insertions=$INSERTIONS" >> $GITHUB_OUTPUT
+          # Unique heredoc delimiter — a diff containing a literal "EOF" line
+          # (any patch touching shell heredocs) corrupts $GITHUB_OUTPUT and
+          # kills the job at parse time (bit us on dom PR #2).
+          DELIM="DIFF_$(openssl rand -hex 8)"
+          echo "diff<<$DELIM" >> $GITHUB_OUTPUT
+          git diff origin/${{ github.base_ref }}...HEAD -- '*.py' '*.ts' '*.tsx' '*.js' | head -300 >> $GITHUB_OUTPUT
+          echo "$DELIM" >> $GITHUB_OUTPUT
+
+      - name: Route to model by complexity
+        id: route
+        run: |
+          FILES=${{ steps.diff.outputs.files }}
+          INSERTIONS=${{ steps.diff.outputs.insertions }}
+          # Simple: few files, few lines → Haiku
+          # Complex: many files or many lines → Sonnet
+          if [ "$FILES" -le 3 ] && [ "$INSERTIONS" -le 50 ]; then
+            echo "model=claude-haiku-4-5-20251001" >> $GITHUB_OUTPUT
+            echo "tier=SIMPLE" >> $GITHUB_OUTPUT
+            echo "cost=~\$0.01" >> $GITHUB_OUTPUT
+          elif [ "$FILES" -le 8 ] && [ "$INSERTIONS" -le 200 ]; then
+            echo "model=claude-haiku-4-5-20251001" >> $GITHUB_OUTPUT
+            echo "tier=MEDIUM" >> $GITHUB_OUTPUT
+            echo "cost=~\$0.03" >> $GITHUB_OUTPUT
+          else
+            echo "model=claude-sonnet-4-6" >> $GITHUB_OUTPUT
+            echo "tier=COMPLEX" >> $GITHUB_OUTPUT
+            echo "cost=~\$0.45" >> $GITHUB_OUTPUT
+          fi
+
+      - name: AI Review
+        id: ai_review
+        # Pass untrusted values (esp. the diff) via env, NOT via ${{ }} string
+        # interpolation into the script — otherwise diff lines execute as shell
+        # commands (GitHub Actions script injection).
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODEL: ${{ steps.route.outputs.model }}
+          TIER: ${{ steps.route.outputs.tier }}
+          DIFF: ${{ steps.diff.outputs.diff }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            REVIEW="_AI review skipped: \`ANTHROPIC_API_KEY\` secret not configured._"
+          else
+            REVIEW=$(curl -s https://api.anthropic.com/v1/messages \
+              -H "x-api-key: $ANTHROPIC_API_KEY" \
+              -H "anthropic-version: 2023-06-01" \
+              -H "content-type: application/json" \
+              -d "$(jq -n \
+                --arg model "$MODEL" \
+                --arg diff "$DIFF" \
+                --arg tier "$TIER" \
+                '{
+                  model: $model,
+                  max_tokens: 1024,
+                  messages: [{
+                    role: "user",
+                    content: ("You are a code reviewer. Review this PR diff concisely.\n\nComplexity tier: " + $tier + "\n\nFocus on:\n- Bugs or logic errors\n- Security issues\n- Missing tests for non-trivial changes\n- Style issues only if significant\n\nBe brief. If the change looks good, say so in one line.\n\nDiff:\n" + $diff)
+                  }]
+                }')" | jq -r '.content[0].text // "Review unavailable"')
+          fi
+
+          DELIM="REVIEW_$(openssl rand -hex 8)"
+          echo "review<<$DELIM" >> $GITHUB_OUTPUT
+          echo "$REVIEW" >> $GITHUB_OUTPUT
+          echo "$DELIM" >> $GITHUB_OUTPUT
+
+      - name: Post review comment
+        uses: actions/github-script@v7
+        env:
+          # Untrusted model output — read via env, not interpolated into the script.
+          REVIEW: ${{ steps.ai_review.outputs.review }}
+        with:
+          script: |
+            const tier = '${{ steps.route.outputs.tier }}';
+            const model = '${{ steps.route.outputs.model }}';
+            const cost = '${{ steps.route.outputs.cost }}';
+            const files = '${{ steps.diff.outputs.files }}';
+            const review = process.env.REVIEW || '_No review output._';
+
+            const tierEmoji = { SIMPLE: '🟢', MEDIUM: '🟡', COMPLEX: '🔴' }[tier] || '⚪';
+
+            const body = [
+              `### ${tierEmoji} AI Code Review — ${tier}`,
+              `> **Model:** \`${model}\` · **Files changed:** ${files} · **Cost:** ${cost}`,
+              '',
+              review,
+              '',
+              '<sub>Powered by [dom](https://github.com/ethos71/dom) · auto-routed by diff complexity</sub>'
+            ].join('\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

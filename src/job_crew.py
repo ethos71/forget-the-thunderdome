@@ -125,8 +125,10 @@ def run_job_crew(verbose: bool = True) -> int:
     Falls back gracefully if crewAI or LLM is unavailable.
     """
     if not ai_config.is_available():
-        print("⚠️  No LLM API key found (OPENAI_API_KEY or ANTHROPIC_API_KEY).")
-        print("   Set one in your environment to run the AI crew.")
+        print("⚠️  No LLM provider available.")
+        print("   Set OPENAI_API_KEY or ANTHROPIC_API_KEY, or run a local")
+        print("   Ollama server (http://localhost:11434) — it's used")
+        print("   automatically as a free fallback when no paid key is set.")
         return 0
 
     profile = load_profile()

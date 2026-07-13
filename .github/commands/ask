@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# ask — Quick Q&A via local Ollama (free, private, no API tokens)
+#
+# Usage:
+#   ask "What does this regex do: ^[A-Z]{3}$"
+#   ask --code "Generate a pytest fixture for SQLite"
+#   echo "some code" | ask "Review this for bugs"
+#   ask --sbz "FILE: x.py CHANGE: rename foo→bar TEST: pytest"
+#
+# Model: llama3.1:8b (fast, 4.9GB, already pulled)
+# Cost: FREE (runs locally, no network required)
+#
+# Metering: when python3 can import `openai` and dom's agent_tools.py is
+# in the repo, the call goes through ask_local() and lands in the usage
+# log (.dom/usage.jsonl, purpose="adhoc") so `dom usage` sees it.
+# Otherwise it falls back to raw `ollama run` and prints an unmetered note.
+
+set -euo pipefail
+
+MODEL="llama3.1:8b"
+SYSTEM_PROMPT=""
+QUESTION=""
+
+# Parse flags
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --code)
+      SYSTEM_PROMPT="You are a senior Python/TypeScript developer. Give concise, correct code. No explanations unless asked."
+      shift
+      ;;
+    --sbz)
+      SYSTEM_PROMPT="You are @sbz, a junior developer. You make exactly the change described and nothing else. Respond with only the replacement code block."
+      shift
+      ;;
+    --sql)
+      SYSTEM_PROMPT="You are a SQLite expert. The database is SmartBallz (fantasy baseball). Give working SQL only."
+      shift
+      ;;
+    --help|-h)
+      grep "^#" "$0" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *)
+      QUESTION="$*"
+      break
+      ;;
+  esac
+done
+
+# Accept stdin if no question given (pipe mode)
+if [[ -z "$QUESTION" ]] && ! [ -t 0 ]; then
+  STDIN=$(cat)
+  QUESTION="${STDIN}"
+fi
+
+if [[ -z "$QUESTION" ]]; then
+  echo "Usage: ask [--code|--sbz|--sql] \"your question\""
+  echo "   or: echo 'code' | ask \"review this\""
+  exit 1
+fi
+
+# ── Metered path: ask_local() logs tokens+latency to .dom/usage.jsonl ────────
+# Repo root = first ancestor of this script's dir that has a .git.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR"
+while [[ "$REPO_ROOT" != "/" && ! -e "$REPO_ROOT/.git" ]]; do
+  REPO_ROOT="$(dirname "$REPO_ROOT")"
+done
+
+AGENT_TOOLS=""
+if [[ -e "$REPO_ROOT/.git" ]]; then
+  # Same locate rule as the other dom scripts (check-rates.py, evals):
+  # find agent_tools.py under the repo root, skipping vendored/VCS dirs.
+  AGENT_TOOLS="$(find "$REPO_ROOT" \
+    \( -name .git -o -name .venv -o -name venv -o -name node_modules -o -name .claude \) -prune \
+    -o -name agent_tools.py -print -quit 2>/dev/null || true)"
+fi
+
+if [[ -n "$AGENT_TOOLS" ]] && python3 -c "import openai" 2>/dev/null; then
+  if ASK_QUESTION="$QUESTION" ASK_SYSTEM="$SYSTEM_PROMPT" ASK_MODEL="$MODEL" \
+     ASK_AGENT_TOOLS="$AGENT_TOOLS" python3 - <<'PYEOF'
+import importlib.util, os, sys
+
+spec = importlib.util.spec_from_file_location("agent_tools_ask", os.environ["ASK_AGENT_TOOLS"])
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+result = mod.ask_local(
+    os.environ["ASK_QUESTION"],
+    model=os.environ.get("ASK_MODEL") or "llama3.1:8b",
+    system=os.environ.get("ASK_SYSTEM") or None,
+)
+if result.get("status") != "success":
+    print(f"ask: metered path failed — {result.get('error')}", file=sys.stderr)
+    sys.exit(1)
+print(result.get("answer", ""))
+PYEOF
+  then
+    exit 0
+  fi
+  echo "note: metered path failed — falling back to raw ollama (this call is UNMETERED)." >&2
+else
+  echo "note: this call is UNMETERED (needs the 'openai' package + dom's agent_tools.py to log to .dom/usage.jsonl)." >&2
+fi
+
+# ── Fallback: raw ollama run (no usage logging) ──────────────────────────────
+if [[ -n "$SYSTEM_PROMPT" ]]; then
+  FULL_PROMPT="[System: ${SYSTEM_PROMPT}]
+
+${QUESTION}"
+else
+  FULL_PROMPT="$QUESTION"
+fi
+
+ollama run "$MODEL" "$FULL_PROMPT"

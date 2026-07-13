@@ -172,7 +172,44 @@ class FormParserOrchestrator:
         return json.dumps(self.parsed_form.to_dict(), indent=2)
 
 
+def _run_mcp():
+    """Launch the stdio MCP server exposing the form parser as an MCP tool.
+
+    Imports `mcp` lazily so the normal CLI runs without the package installed.
+    The AnswerSuggester (which loads profile.yaml) is constructed inside the
+    tool call, keeping server startup / tool registration side-effect free.
+    """
+    try:
+        from mcp.server.fastmcp import FastMCP
+    except ImportError:
+        print("MCP support requires the 'mcp' package: pip install mcp", file=sys.stderr)
+        sys.exit(1)
+
+    mcp = FastMCP("ftt-form-parser")
+
+    @mcp.tool()
+    def parse_application_form(url: str, output: str = "json") -> str:
+        """Parse a job application form from a URL and suggest answers from profile.yaml.
+
+        Extracts the form fields (Workday / Greenhouse / Lever / etc.), classifies
+        them, and attaches a suggested answer to each field drawn from your profile.
+        `output` is 'json' (default, structured) or 'markdown' (human-readable
+        template). Returns the rendered form as a string.
+        """
+        orchestrator = FormParserOrchestrator(url)
+        orchestrator.parse()
+        if output == "markdown":
+            return orchestrator.to_markdown()
+        return orchestrator.to_json()
+
+    mcp.run()
+
+
 def main():
+    if '--mcp' in sys.argv[1:]:
+        _run_mcp()
+        return
+
     if len(sys.argv) < 2:
         print("Usage: form_parser.py <job_url> [--output json|markdown]")
         print("")

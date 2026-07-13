@@ -50,13 +50,28 @@ python3 mcp-servers/gmail-server/gmail_tracker.py --sync --days 30
 
 ## Agent mode
 
-This toolkit was built to be driven by an AI agent. Today that works through the
-CLI: open this repo in Claude Code (or Copilot with terminal access), and the agent
-runs the loop — discover → validate (`skills/job-search-validation/`) → score →
-apply → track → follow up — by calling the same commands you would.
+This toolkit was built to be driven by an AI agent, and every piece works two ways.
 
-Native MCP server entry points (so any MCP client can wire in without shell access)
-are on the roadmap; `.mcp.json.example` sketches the planned shape.
+**Via the CLI** — open this repo in Claude Code (or Copilot with terminal access),
+and the agent runs the loop — discover → validate (`skills/job-search-validation/`)
+→ score → apply → track → follow up — by calling the same commands you would.
+
+**Via MCP** — the gmail-server, job-discovery, and form-parser modules each run as a
+stdio MCP server with a `--mcp` flag, so any MCP client can wire them in without
+shell access:
+
+```bash
+python3 mcp-servers/gmail-server/gmail_tracker.py --mcp   # sync + classify email
+python3 mcp-servers/job-discovery/scraper.py --mcp        # discover + score postings
+python3 mcp-servers/form-parser/form_parser.py --mcp      # parse a form, suggest answers
+```
+
+Copy `.mcp.json.example` to `.mcp.json` (set `YOUR_PROJECT_ROOT`) to register all
+three with your client. They run locally over stdio and share the same
+`profile.yaml` and `data/job_tracker.db` as the CLI — nothing new leaves your
+machine. The `--mcp` flag is purely additive; the CLI commands above still work
+unchanged. Running as an MCP server needs the `mcp` package (`pip install mcp`); the
+plain CLI does not.
 
 ## Just give me the app
 
@@ -66,7 +81,9 @@ the path.
 
 ## Roadmap
 
-- [ ] Native MCP server entry points (`--mcp`) for gmail-server, job-discovery, form-parser
+Shipped: native MCP server entry points (`--mcp`) for gmail-server, job-discovery,
+and form-parser — see **Agent mode** above.
+
 - [ ] Desktop launcher (Tauri/Electron) with first-run profile wizard
 - [ ] Email providers beyond Gmail: Microsoft 365 / Outlook (Graph), generic IMAP
 - [ ] Calendar: ICS export for interviews first, then Google/Microsoft adapters
