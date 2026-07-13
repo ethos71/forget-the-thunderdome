@@ -47,9 +47,10 @@ or a rule is established.
   `form-parser`) runs as a plain CLI *and* as a native stdio MCP server via `--mcp`.
   `.mcp.json.example` wires them into any MCP client. `mcp` import is lazy (inside
   the `--mcp` branch) so the CLI works without the package.
-- **dom token-economy adopted** (2026-07-13): `sbz` / `ask` / `dom usage` available
-  for dev-time delegation — SIMPLE tasks route to free local Ollama, harder tiers to
-  paid only when needed. Source shell tools: `source .github/commands/sbz-tools.sh`.
+- **dom token-economy adopted** (2026-07-13): `dom task` / `dom ask` / `dom usage`
+  available for dev-time delegation — SIMPLE tasks route to free local Ollama, harder
+  tiers to paid only when needed. Just run `dom <command>`, or source the shell tools:
+  `source .github/commands/dom-tools.sh`.
 - `profile.yaml`, `data/`, email tokens, and `.dom/` are gitignored from day one.
 
 ### Gotchas
@@ -77,8 +78,10 @@ Major decisions and the reasoning behind them. Update on milestones.
 
 ### Completed features
 
-- 2026-07-13 — Adopted dom toolkit (`install.sh`): `sbz`/`ask`/`dom usage`, universal
-  evals, memory architecture, eval-enforcement gate. (FTT TODO task closed.)
+- 2026-07-13 — Adopted dom toolkit (`install.sh`): `dom task`/`dom ask`/`dom usage`,
+  universal evals, memory architecture, eval-enforcement gate. (FTT TODO task closed.)
+  Re-installed 2026-07-13 across the toolkit rename — surface is now `dom <command>`;
+  the old shell-tool name ships only as a deprecated shim.
 - 2026-07-13 — Ollama free-tier fallback in `src/ai_config.py` (+ crewAI/AutoGen consumers).
 - 2026-07-13 — Native `--mcp` entry points for gmail-server, job-discovery, form-parser
   (moved off the roadmap; README + `.mcp.json.example` updated).

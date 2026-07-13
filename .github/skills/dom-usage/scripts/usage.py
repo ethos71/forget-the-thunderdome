@@ -259,7 +259,7 @@ def _render(agg: dict, audit: dict, sav: dict, path: Path, since_days) -> tuple[
     if agg["calls"] == 0:
         L.append("")
         L.append("  No delegated model calls logged yet.")
-        L.append("  Generate some:  sbz <file> 'change' 'test'   (or ask_local in MCP)")
+        L.append("  Generate some:  dom task <file> 'change' 'test'   (or ask_local in MCP)")
         L.append("")
         return "\n".join(L), 0
 

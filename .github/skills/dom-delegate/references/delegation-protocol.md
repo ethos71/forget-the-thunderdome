@@ -50,8 +50,8 @@ Rules for a well-formed task:
 
 Worked example (the token-economy rollout):
 ```bash
-dom delegate smartballz "MERGE dom telemetry into src/mcp/tools/agent_tools.py, preserving deploy_status + src.mcp import" --priority P1 --verify "sbz still runs; dom usage renders; .dom/usage.jsonl grows"
-dom delegate job    "Reinstall dom (~/workspace/dom/install.sh) to gain telemetry + dom cmd + dom-usage" --priority P1 --verify "dom usage renders after an sbz call"
+dom delegate smartballz "MERGE dom telemetry into src/mcp/tools/agent_tools.py, preserving deploy_status + src.mcp import" --priority P1 --verify "dom task still runs; dom usage renders; .dom/usage.jsonl grows"
+dom delegate job    "Reinstall dom (~/workspace/dom/install.sh) to gain telemetry + dom cmd + dom-usage" --priority P1 --verify "dom usage renders after a dom task call"
 dom delegate grof2  "Reinstall dom to gain telemetry" --priority P1 --verify "dom usage renders"
 dom delegate nyx    "Reinstall dom to gain telemetry" --priority P1 --verify "dom usage renders"
 ```

@@ -35,7 +35,7 @@ you own your repo.
 - Never edit another bot's TODO/memory. Never delegate — that's @dom's job.
 
 ### The standing rule (why these tasks exist)
-Keep cheap work cheap: delegate SIMPLE/MEDIUM single-file edits to `sbz`
+Keep cheap work cheap: delegate SIMPLE/MEDIUM single-file edits to `dom task`
 (local Ollama first), keep `ollama serve` running, and run `dom usage` weekly
 so no free-tier work is billed to a paid model. That's the program @dom is
 rolling out; your delegated tasks are your slice of it.

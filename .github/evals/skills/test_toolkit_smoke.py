@@ -3,15 +3,17 @@
 
 Two checks, both against real content (never exit-code-only):
 
-1. **sbz import contract.** Parse `.github/commands/sbz-tools.sh` for the
+1. **delegate import contract.** Parse `.github/commands/dom-tools.sh` for the
    exact `sys.path.insert(...)` lines and `from <pkg> import delegate_task`
-   that `sbz()` executes, then run precisely that in a subprocess and assert
+   that `dom task` executes, then run precisely that in a subprocess and assert
    the resolved `delegate_task` is a callable defined INSIDE this repo.
    This is the eval that would have caught the 2026-07-10 break where the
    shipped template imported `github_mcp.tools` — a package no consumer ever
-   had — leaving sbz silently dead on every standard install. Parsing the
-   repo's own sbz-tools.sh (instead of assuming the default) means custom
+   had — leaving `dom task` silently dead on every standard install. Parsing
+   the repo's own dom-tools.sh (instead of assuming the default) means custom
    layouts (e.g. smartballz's `src.mcp.tools`) pass on their own terms.
+   Falls back to the legacy `sbz-tools.sh` for consumers that have not yet
+   re-installed across the sbz→dom rename.
 
 2. **Universal-eval freshness.** Every eval listed in `MANIFEST.sha256`
    (shipped by install.sh, regenerated in dom via `gen_manifest.py`) must
@@ -26,23 +28,39 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-SBZ_TOOLS = PROJECT_ROOT / ".github" / "commands" / "sbz-tools.sh"
+DOM_TOOLS = PROJECT_ROOT / ".github" / "commands" / "dom-tools.sh"
+SBZ_LEGACY = PROJECT_ROOT / ".github" / "commands" / "sbz-tools.sh"
 MANIFEST = Path(__file__).resolve().parent / "MANIFEST.sha256"
 
 
-def check_sbz_import() -> list[str]:
-    """Execute the exact import contract sbz-tools.sh uses. Return issues."""
-    if not SBZ_TOOLS.exists():
-        return ["missing .github/commands/sbz-tools.sh — toolkit not installed (rerun install.sh)"]
+def _tools_file() -> Path | None:
+    """The file holding the `dom task` implementation + its import line.
 
-    # In dom itself sbz-tools.sh is the unpatched template; consumers have the
+    Prefer dom-tools.sh; fall back to a legacy (pre-rename) sbz-tools.sh that
+    still carries the real implementation. A post-rename sbz-tools.sh is a thin
+    shim with no import line, so dom-tools.sh always wins when both exist.
+    """
+    if DOM_TOOLS.exists():
+        return DOM_TOOLS
+    if SBZ_LEGACY.exists():
+        return SBZ_LEGACY
+    return None
+
+
+def check_delegate_import() -> list[str]:
+    """Execute the exact import contract dom-tools.sh uses. Return issues."""
+    tools = _tools_file()
+    if tools is None:
+        return ["missing .github/commands/dom-tools.sh — toolkit not installed (rerun install.sh)"]
+
+    # In dom itself dom-tools.sh is the unpatched template; consumers have the
     # placeholder substituted by install.sh. Substitute for both cases.
-    text = SBZ_TOOLS.read_text(encoding="utf-8").replace("DOM_PROJECT_DIR", str(PROJECT_ROOT))
+    text = tools.read_text(encoding="utf-8").replace("DOM_PROJECT_DIR", str(PROJECT_ROOT))
 
     inserts = re.findall(r"sys\.path\.insert\(0,\s*'([^']+)'\)", text)
     m = re.search(r"^from ([A-Za-z_][\w.]*) import delegate_task\s*$", text, re.MULTILINE)
     if not m:
-        return ["sbz-tools.sh has no `from <pkg> import delegate_task` line — sbz cannot work"]
+        return [f"{tools.name} has no `from <pkg> import delegate_task` line — `dom task` cannot work"]
     import_pkg = m.group(1)
 
     probe_lines = ["import sys"]
@@ -65,7 +83,7 @@ def check_sbz_import() -> list[str]:
     if result.returncode != 0:
         err = (result.stderr or result.stdout).strip().splitlines()
         tail = err[-1] if err else "(no output)"
-        return [f"sbz import contract FAILS: `from {import_pkg} import delegate_task` → {tail}"]
+        return [f"delegate import contract FAILS: `from {import_pkg} import delegate_task` → {tail}"]
 
     resolved = next(
         (ln[len("RESOLVED::"):] for ln in result.stdout.splitlines() if ln.startswith("RESOLVED::")),
@@ -110,11 +128,11 @@ def check_manifest() -> list[str]:
 
 def main() -> int:
     print("=" * 60)
-    print("toolkit-smoke eval — sbz import contract + eval freshness")
+    print("toolkit-smoke eval — delegate import contract + eval freshness")
     print("=" * 60)
 
     failed = 0
-    for label, issues in (("sbz import contract", check_sbz_import()),
+    for label, issues in (("delegate import contract", check_delegate_import()),
                           ("universal-eval freshness", check_manifest())):
         if issues:
             failed += 1
@@ -128,7 +146,7 @@ def main() -> int:
     if failed:
         print(f"FAILED: {failed} toolkit-smoke check(s) — the toolkit does not function here")
         return 1
-    print("PASSED: sbz import resolves in-repo and universal evals are current")
+    print("PASSED: delegate import resolves in-repo and universal evals are current")
     return 0
 
 

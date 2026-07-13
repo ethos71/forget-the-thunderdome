@@ -5,7 +5,7 @@
 #   ask "What does this regex do: ^[A-Z]{3}$"
 #   ask --code "Generate a pytest fixture for SQLite"
 #   echo "some code" | ask "Review this for bugs"
-#   ask --sbz "FILE: x.py CHANGE: rename foo→bar TEST: pytest"
+#   ask --task "FILE: x.py CHANGE: rename foo→bar TEST: pytest"
 #
 # Model: llama3.1:8b (fast, 4.9GB, already pulled)
 # Cost: FREE (runs locally, no network required)
@@ -28,8 +28,8 @@ while [[ $# -gt 0 ]]; do
       SYSTEM_PROMPT="You are a senior Python/TypeScript developer. Give concise, correct code. No explanations unless asked."
       shift
       ;;
-    --sbz)
-      SYSTEM_PROMPT="You are @sbz, a junior developer. You make exactly the change described and nothing else. Respond with only the replacement code block."
+    --task|--sbz)
+      SYSTEM_PROMPT="You are @dom-task, a junior developer. You make exactly the change described and nothing else. Respond with only the replacement code block."
       shift
       ;;
     --sql)
@@ -54,7 +54,7 @@ if [[ -z "$QUESTION" ]] && ! [ -t 0 ]; then
 fi
 
 if [[ -z "$QUESTION" ]]; then
-  echo "Usage: ask [--code|--sbz|--sql] \"your question\""
+  echo "Usage: ask [--code|--task|--sql] \"your question\""
   echo "   or: echo 'code' | ask \"review this\""
   exit 1
 fi

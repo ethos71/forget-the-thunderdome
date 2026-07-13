@@ -17,7 +17,7 @@ the log schema and audit rules.
 
 ## Quick start
 ```bash
-# after some delegated work has run (sbz / delegate_task):
+# after some delegated work has run (dom task / delegate_task):
 dom usage            # full report
 dom usage --since 30 # last 30 days
 dom usage --json     # for a dashboard or CI gate
@@ -29,4 +29,4 @@ a paid model, so this doubles as a CI cost-guard.
 ## How it hooks in
 The report is only as complete as the log. `delegate_task` in
 `.github/mcp/tools/agent_tools.py` writes one line per real model call to
-`.dom/usage.jsonl` (gitignored). No extra setup — running `sbz` populates it.
+`.dom/usage.jsonl` (gitignored). No extra setup — running `dom task` populates it.

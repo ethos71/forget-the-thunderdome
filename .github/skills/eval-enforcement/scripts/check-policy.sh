@@ -18,7 +18,7 @@ echo "── memory architecture ───────────────�
 python3 .github/evals/skills/test_memory_architecture.py
 
 echo ""
-echo "── toolkit smoke (sbz import + eval freshness) ─────────────"
+echo "── toolkit smoke (delegate import + eval freshness) ─────────────"
 python3 .github/evals/skills/test_toolkit_smoke.py
 
 echo ""

@@ -426,7 +426,7 @@ def delegate_task(
         # Allow partial match (e.g. "qwen2.5-coder:7b" matches "qwen2.5-coder:7b-q4_K_M")
         if not any(model_id.split(":")[0] in m for m in installed):
             # Auto-fallback to llama3.1:8b (general LLM — works for simple edits,
-        # unreliable on Python syntax like triple-quotes). Run `sbz-pull` for best results.
+        # unreliable on Python syntax like triple-quotes). Run `dom pull` for best results.
             if any("llama3.1" in m for m in installed):
                 model_id = "llama3.1:8b"
                 # caller will see model_id changed — warn via dry_run or result
@@ -434,7 +434,7 @@ def delegate_task(
                 return {
                     "status": "error",
                     "error": f"Model '{model_id}' not installed locally.",
-                    "hint": "Run: sbz-pull  (installs qwen2.5-coder:7b, recommended for code)",
+                    "hint": "Run: dom pull  (installs qwen2.5-coder:7b, recommended for code)",
                     "installed": installed,
                 }
         backend = "ollama"

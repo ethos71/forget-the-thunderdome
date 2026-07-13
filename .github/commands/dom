@@ -58,7 +58,7 @@ case "$cmd" in
     # Self-update from @dom (the boss / source of truth): re-run dom's
     # install.sh into THIS repo. Refreshes the dom-managed files
     # (agent_tools, commands, skills, evals, agents) to dom@main — install.sh
-    # backs up agent_tools + preserves custom sbz imports first.
+    # backs up agent_tools + preserves custom dom-tools imports first.
     # Source: $DOM_SOURCE, else ~/workspace/dom, else curl github.com/ethos71/dom.
     SRC="${DOM_SOURCE:-$HOME/workspace/dom}"
     if [[ "${1:-}" == "--check" ]]; then
@@ -79,23 +79,23 @@ case "$cmd" in
     fi
     ;;
   status)
-    # sbz-status lives in sbz-tools.sh (function library, not a script)
+    # _dom_status lives in dom-tools.sh (function library, not a script)
     # shellcheck disable=SC1091
-    set +u; source "$HERE/sbz-tools.sh"; set -u
-    sbz-status
+    set +u; source "$HERE/dom-tools.sh"; set -u
+    _dom_status
     ;;
   task|--task)
     # Delegate an atomic single-file code task via the auto-router
     # (SIMPLE→Ollama free … ARCHITECTURAL→Opus). The dom-branded command;
     # `@<agent> --task <file> 'change' 'test'` maps here.
     # shellcheck disable=SC1091
-    set +u; source "$HERE/sbz-tools.sh"; set -u
-    sbz "$@"
+    set +u; source "$HERE/dom-tools.sh"; set -u
+    _dom_task "$@"
     ;;
   pull)
     # shellcheck disable=SC1091
-    set +u; source "$HERE/sbz-tools.sh"; set -u
-    sbz-pull
+    set +u; source "$HERE/dom-tools.sh"; set -u
+    _dom_pull
     ;;
   ask)
     exec "$HERE/ask" "$@"

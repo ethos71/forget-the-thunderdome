@@ -142,7 +142,7 @@ refreshes ITSELF from @dom by running, in its own repo:
 - **`@<bot> --update`** → `dom update` — re-runs @dom's `install.sh` into this
   repo, pulling the latest agent_tools, commands, skills, evals, and agents to
   dom@main. install.sh backs up `agent_tools.py` and preserves any custom
-  `sbz` import first, so local customizations aren't silently lost.
+  `dom-tools` import first, so local customizations aren't silently lost.
 - **`dom update --check`** → report the @dom source + its HEAD without changing
   anything (dry run).
 

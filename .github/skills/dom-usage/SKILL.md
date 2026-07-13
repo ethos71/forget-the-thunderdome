@@ -6,7 +6,7 @@ description: Report AI token usage, cost, and latency per model and audit that O
 # dom-usage
 
 Answers four questions for any project that delegates work through dom's
-`sbz` / `delegate_task` / `ask_local` router:
+`dom task` / `delegate_task` / `ask_local` router:
 
 1. **What tokens are going to what models?** — per-model table (calls,
    tokens, estimated cost, wall-clock time) with a grand total.
@@ -29,7 +29,7 @@ The shell `ask` helper is local/free but not yet logged — prefer
 
 If there's no log yet, nothing has been delegated — run a task first:
 ```bash
-sbz path/to/file 'some change' 'echo test'
+dom task path/to/file 'some change' 'echo test'
 ```
 
 ## Run it
@@ -66,7 +66,7 @@ Log location is autodetected: `--log` > `$DOM_USAGE_LOG` > the nearest
 - It does not meter Claude Code's own orchestrator tokens (this session) —
   use Claude Code's built-in `/usage` for that (which is why this command is
   `dom usage`, not `/usage`). It meters the **delegated** tier — the models
-  `sbz`/`delegate_task`/`ask_local` call on your behalf. That's the tier dom
+  `dom task`/`delegate_task`/`ask_local` call on your behalf. That's the tier dom
   exists to keep cheap.
 - OpenRouter costs are **estimates** from a rate table in `agent_tools.py`
   (`_OPENROUTER_RATES`, USD per 1M tokens). Edit it to match your plan; token

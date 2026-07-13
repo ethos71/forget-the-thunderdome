@@ -127,11 +127,11 @@ route_quickqa() {
 }
 
 route_atomic() {
-  print_result "@sbz (auto-routed: Ollama → Haiku → Sonnet → Opus)" "Single-file tasks, atomic scope" "FREE if simple, ~\$0.01 if medium"
-  print_details "@sbz" "sbz <file> <change> [test] — auto-classifies complexity and picks cheapest model"
+  print_result "dom task (auto-routed: Ollama → Haiku → Sonnet → Opus)" "Single-file tasks, atomic scope" "FREE if simple, ~\$0.01 if medium"
+  print_details "dom task" "dom task <file> <change> [test] — auto-classifies complexity and picks cheapest model"
   echo -e "${BLUE}Examples:${NC}"
-  echo "   sbz src/api/routes/auth.py 'Rename port to server_port' 'echo ok'"
-  echo "   sbz src/react_app/src/pages/WaiversPage.tsx 'Add buy-low badge' 'npm run build --prefix src/react_app'"
+  echo "   dom task src/api/routes/auth.py 'Rename port to server_port' 'echo ok'"
+  echo "   dom task src/react_app/src/pages/WaiversPage.tsx 'Add buy-low badge' 'npm run build --prefix src/react_app'"
   echo
   echo -e "${BLUE}How routing works (model=auto, four-tier waterfall):${NC}"
   echo "   SIMPLE        → Ollama/qwen   (free, local)  — rename, typo, constant change"
@@ -140,10 +140,10 @@ route_atomic() {
   echo "   ARCHITECTURAL → Opus          (~\$2.00)       — cross-system design, hard debug, deep planning"
   echo
   echo -e "${BLUE}Force a specific model:${NC}"
-  echo "   sbz src/file.py 'change' 'test' ollama   # force free local"
-  echo "   sbz src/file.py 'change' 'test' haiku    # force Haiku"
-  echo "   sbz src/file.py 'change' 'test' sonnet   # force Sonnet"
-  echo "   sbz src/file.py 'change' 'test' opus     # force Opus (most expensive)"
+  echo "   dom task src/file.py 'change' 'test' ollama   # force free local"
+  echo "   dom task src/file.py 'change' 'test' haiku    # force Haiku"
+  echo "   dom task src/file.py 'change' 'test' sonnet   # force Sonnet"
+  echo "   dom task src/file.py 'change' 'test' opus     # force Opus (most expensive)"
   echo
   echo -e "${BLUE}Preview routing without running:${NC}"
   echo "   Use sb_delegate_task(..., dry_run=True) in MCP"
