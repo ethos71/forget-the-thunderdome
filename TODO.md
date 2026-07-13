@@ -15,4 +15,8 @@ section and `docs/robots/MEMORY.md`, not repeated here.
 
 <!-- Managed by `dom delegate`. @dom writes these; this bot implements, checks them off, and commits. `dom intake` lists your open ones. -->
 
-_(none open — DOM-20260713-1 toolkit-surface rename to `dom` completed & committed 2026-07-13.)_
+- [x] `DOM-20260713-1` **(P1)** toolkit-surface rename to `dom` — adopted: re-ran
+      install.sh (pulled dom-tools.sh + deprecated shim), migrated this repo's
+      ~/.bashrc line to dom-tools.sh, cleared the old naming from repo-authored files
+      (only toolkit shims remain), eval gate green, Ollama audit 100% free. Done
+      2026-07-13 (commit d46dfba). _[done]_
