@@ -31,3 +31,6 @@ section and `docs/robots/MEMORY.md`, not repeated here.
       and a few `@smartballz` example mentions remain — no roster data; durable fix is
       upstream in dom (don't ship the roster / @dom-side code / example bot to public
       consumers). Done 2026-07-13. _[privacy-leak done]_
+- [ ] `DOM-20260714-1` **(P1)** OLLAMA-MAX (account-downgrade program): flip the product-AI waterfall in src/ai_config.py to LOCAL-FIRST. Today paid wins (OPENAI_API_KEY present -> gpt-4o-mini) and Ollama is only the fallback; invert it: if Ollama is reachable -> ('ollama', None) tier even when a paid key exists; paid ONLY when FTT_FORCE_PAID=1 (or Ollama down); none-tier unchanged. Update the crewAI/AutoGen guidance strings + README AI section + docs/robots/MEMORY.md convention note (currently documents paid-first). Dev-side: keep delegate-first (dom task / dom ask) for mechanical edits; keep ollama serve running (see dom docs/ollama-keepalive.md). Implement in ONE Opus session; routine work thereafter stays local.  _[ollama-max]_
+      ↳ verify: `with OPENAI_API_KEY set AND ollama up: get_provider()==('ollama',None) and get_openai_config() points at localhost:11434; FTT_FORCE_PAID=1 -> ('openai',key); eval gate green; dom usage enforcement PASS`
+      ↳ set by @dom 2026-07-14 (owner @thunderdome)
