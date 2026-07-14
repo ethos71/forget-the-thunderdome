@@ -2,11 +2,15 @@
 """
 Shared LLM provider configuration for crewAI and AutoGen.
 
-Three-tier waterfall:
-  1. Paid   — OPENAI_API_KEY or ANTHROPIC_API_KEY set → use that provider.
-  2. Ollama — no paid key, but a local Ollama server is reachable → use a
-              free local model via Ollama's OpenAI-compatible endpoint.
+Three-tier waterfall (LOCAL-FIRST — Ollama carries everything it can):
+  1. Ollama — a local Ollama server is reachable → use a free local model via
+              Ollama's OpenAI-compatible endpoint. Preferred even when a paid
+              key is set, so nothing hits a paid account by default.
+  2. Paid   — Ollama is unreachable (or FTT_FORCE_PAID=1 is set) and
+              OPENAI_API_KEY or ANTHROPIC_API_KEY is set → use that provider.
   3. None   — neither → AI features stay disabled (callers fall back).
+
+Escape hatch: set FTT_FORCE_PAID=1 to force the paid tier even when Ollama is up.
 """
 
 import json
@@ -69,16 +73,33 @@ def get_ollama_model() -> str:
 # ── Provider selection ──────────────────────────────────────────────────────
 
 
-def get_provider() -> Tuple[Optional[str], Optional[str]]:
-    """Returns (provider_name, api_key). api_key is None for the ollama tier."""
+def _get_paid_provider() -> Tuple[Optional[str], Optional[str]]:
+    """Returns the paid tier (openai > anthropic) if a key is set, else (None, None)."""
     if os.getenv("OPENAI_API_KEY"):
         return "openai", os.getenv("OPENAI_API_KEY")
     if os.getenv("ANTHROPIC_API_KEY"):
         return "anthropic", os.getenv("ANTHROPIC_API_KEY")
+    return None, None
+
+
+def get_provider() -> Tuple[Optional[str], Optional[str]]:
+    """
+    Returns (provider_name, api_key). api_key is None for the ollama tier.
+
+    Local-first: a reachable Ollama server wins even when a paid key is set.
+    Set FTT_FORCE_PAID=1 to prefer the paid key; the paid tier is also used
+    when Ollama is unreachable. Falls through to (None, None) if neither.
+    """
+    if os.getenv("FTT_FORCE_PAID") == "1":
+        provider, api_key = _get_paid_provider()
+        if provider is not None:
+            return provider, api_key
+        # FTT_FORCE_PAID set but no key — fall back to local Ollama if up.
+
     reachable, _ = detect_ollama()
     if reachable:
         return "ollama", None
-    return None, None
+    return _get_paid_provider()
 
 
 def is_available() -> bool:

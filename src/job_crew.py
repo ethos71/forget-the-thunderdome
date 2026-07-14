@@ -126,9 +126,10 @@ def run_job_crew(verbose: bool = True) -> int:
     """
     if not ai_config.is_available():
         print("⚠️  No LLM provider available.")
-        print("   Set OPENAI_API_KEY or ANTHROPIC_API_KEY, or run a local")
-        print("   Ollama server (http://localhost:11434) — it's used")
-        print("   automatically as a free fallback when no paid key is set.")
+        print("   Run a local Ollama server (http://localhost:11434) — it's")
+        print("   used automatically and preferred, even when a paid key is set.")
+        print("   Or set OPENAI_API_KEY / ANTHROPIC_API_KEY (used when Ollama is")
+        print("   down, or when FTT_FORCE_PAID=1).")
         return 0
 
     profile = load_profile()

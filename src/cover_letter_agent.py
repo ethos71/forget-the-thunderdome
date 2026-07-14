@@ -3,9 +3,10 @@
 AutoGen-powered cover letter generator.
 Uses a 2-agent conversation: Researcher + Writer.
 
-Uses AutoGen when an LLM provider is available — a paid key (OPENAI_API_KEY /
-ANTHROPIC_API_KEY) or, with no paid key, a local Ollama server
-(http://localhost:11434) automatically as a free fallback.
+Uses AutoGen when an LLM provider is available. Local-first: a reachable local
+Ollama server (http://localhost:11434) is preferred, even when a paid key
+(OPENAI_API_KEY / ANTHROPIC_API_KEY) is set. The paid key is used only when
+Ollama is down, or when FTT_FORCE_PAID=1.
 Falls back to template-based generation on ANY failure
 (no provider at all, import error, network timeout, etc.).
 

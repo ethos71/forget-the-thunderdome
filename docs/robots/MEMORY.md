@@ -3,7 +3,7 @@
 **Purpose:** Structured memory for AI assistants working on this project.
 Read this FIRST before making any changes. It prevents repeating mistakes.
 
-**Last Updated:** 2026-07-13
+**Last Updated:** 2026-07-14
 
 ---
 
@@ -27,8 +27,12 @@ Active work and immediate context. Update every session.
 
 ### Active Issues
 
-- Remaining roadmap: desktop launcher (Tauri/Electron), email providers beyond
-  Gmail (M365/Graph, IMAP), calendar ICS export, dashboard HTML renderer.
+- Roadmap sweep shipped (see Completed features) — genuinely open now: native
+  Google/Microsoft calendar OAuth adapters (ICS export ships), Microsoft Graph
+  email end-to-end verification (scaffolded; needs an Azure app), launcher
+  installer packaging (PyInstaller/CI).
+- `ollama-max` program (account downgrade): product AI is local-first as of
+  2026-07-14 (`DOM-20260714-1`, done here).
 
 ---
 
@@ -39,10 +43,12 @@ or a rule is established.
 
 ### Conventions
 
-- **Three-tier AI waterfall** (`src/ai_config.py`): paid provider
-  (`OPENAI_API_KEY`/`ANTHROPIC_API_KEY`) → **local Ollama free tier** (auto, when
-  no paid key and `ollama serve` is reachable) → none. No paid tool required to use
-  the AI features. Override the local model with `FTT_OLLAMA_MODEL`.
+- **Three-tier AI waterfall — LOCAL-FIRST** (`src/ai_config.py`): **local Ollama**
+  (auto, whenever `ollama serve` is reachable — preferred *even when a paid key is
+  set*) → paid provider (`OPENAI_API_KEY`/`ANTHROPIC_API_KEY`, used only when Ollama
+  is down) → none. Escape hatch: `FTT_FORCE_PAID=1` forces the paid tier even with
+  Ollama up. Flipped from paid-first 2026-07-14 (`DOM-20260714-1`, ollama-max /
+  account-downgrade). Override the local model with `FTT_OLLAMA_MODEL`.
 - **CLI + MCP dual surface**: every server (`gmail-server`, `job-discovery`,
   `form-parser`) runs as a plain CLI *and* as a native stdio MCP server via `--mcp`.
   `.mcp.json.example` wires them into any MCP client. `mcp` import is lazy (inside
@@ -71,8 +77,10 @@ Major decisions and the reasoning behind them. Update on milestones.
 
 - **Local-first, privacy-first** — nothing leaves the machine except the user's own
   requests to job boards and their email provider. This is the product's whole thesis.
-- **Ollama as the free floor** — rather than gating AI behind a paid key, the toolkit
-  falls back to a local model so it works for users with no paid AI subscription.
+- **Ollama as the default, not just the floor** — the toolkit runs on a local model
+  whenever one is reachable, preferring it over any configured paid key (flipped
+  local-first 2026-07-14 for the account-downgrade program). It still works for users
+  with no paid AI subscription; `FTT_FORCE_PAID=1` is the deliberate opt-in to paid.
 - **Adopted the dom toolkit** instead of rolling bespoke cost controls — same routing
   engine (`agent_tools.py`), evals, and memory architecture as the rest of the fleet.
 
@@ -83,6 +91,9 @@ Major decisions and the reasoning behind them. Update on milestones.
   Re-installed 2026-07-13 across the toolkit rename — surface is now `dom <command>`;
   the old shell-tool name ships only as a deprecated shim.
 - 2026-07-13 — Ollama free-tier fallback in `src/ai_config.py` (+ crewAI/AutoGen consumers).
+- 2026-07-14 — Flipped the product-AI waterfall to LOCAL-FIRST (`DOM-20260714-1`,
+  ollama-max): reachable Ollama wins even with a paid key set; paid only when Ollama
+  is down or `FTT_FORCE_PAID=1`. Updated crewAI/AutoGen guidance strings + this memory.
 - 2026-07-13 — Native `--mcp` entry points for gmail-server, job-discovery, form-parser
   (moved off the roadmap; README + `.mcp.json.example` updated).
 - 2026-07-13 — Roadmap sweep (agents fanned out):
